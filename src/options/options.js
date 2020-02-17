@@ -1,5 +1,6 @@
 let elems;
 let statusTimerId;
+let dirty = false;
 
 function saveSearchers() {
     const items = Array.from(document.getElementsByClassName('searcher-item'));
@@ -13,6 +14,7 @@ function saveSearchers() {
             console.error(err);
             updateStatus('Error: ' + err, 'error', 0);
         } else {
+            dirty = false;
             updateStatus('Saved!', 'saved', 3000);
         }
     });
@@ -124,13 +126,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     elems.add.addEventListener('click', e => {
+        dirty = true;
         addSearcherItem();
     });
 
     elems.itemList.addEventListener('click', e => {
         if (e.target && e.target.classList.contains('remove-searcher-item')) {
+            dirty = true;
             removeSearcherItem(e.target.parentElement);
             e.preventDefault();
+        }
+    });
+
+    elems.itemList.addEventListener('input', e => {
+        dirty = true;
+    });
+
+    window.addEventListener('beforeunload', e => {
+        if (dirty) {
+            e.preventDefault();
+            e.returnValue = '';
         }
     });
 
