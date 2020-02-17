@@ -12,14 +12,18 @@
 <body>
   <section class="container">
     <h1>nbsearch-helper</h1>
-    <h2>Searcher settings</h2>
     <form id="searcher-settings-form">
-      <div id="searcher-item-list">
+      <h2>Searcher settings</h2>
+      <div class="save-search-item-block">
+        <output class="save-searcher-status"></output>
+        <button class="save-searcher-item" type="submit">Save</button>
       </div>
-      <div id="searcher-item-actions">
-        <button id="add-searcher-item" type="button">Add</button>
-        <button id="save-searcher-item" type="submit">Save</button>
-        <output id="status"></output>
+      <div id="searcher-item-list">
+        <button class="add-searcher-item" type="button">+</button>
+      </div>
+      <div class="save-search-item-block">
+        <output class="save-searcher-status"></output>
+        <button class="save-searcher-item" type="submit">Save</button>
       </div>
     </form>
   </section>

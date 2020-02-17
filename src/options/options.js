@@ -32,7 +32,7 @@ function restoreSearcher() {
 
 function addSearcherItem(searcher) {
     const searcherItemElem = createSearcherItemElem(searcher);
-    elems.itemList.appendChild(searcherItemElem);
+    elems.itemList.insertBefore(searcherItemElem, elems.add);
 }
 
 function removeSearcherItem(searcherItemElem) {
@@ -90,15 +90,21 @@ function updateStatus(text, cssClass, duration) {
     if (statusTimerId) {
         clearTimeout(statusTimerId);
     }
-    elems.status.textContent = text;
-    for (const cls of Array.from(elems.status.classList)) {
-        elems.status.classList.remove(cls);
+    for (const statusElem of elems.statusList) {
+        statusElem.textContent = text;
+        for (const cls of Array.from(statusElem.classList)) {
+            if (cls !== 'save-searcher-status') {
+                statusElem.classList.remove(cls);
+            }
+        }
+        statusElem.classList.add(cssClass);
+        statusElem.classList.add('fade-in');
     }
-    elems.status.classList.add(cssClass);
-    elems.status.classList.add('fade-in');
     if (duration > 0) {
         statusTimerId = setTimeout(() => {
-            elems.status.classList.remove('fade-in');
+            for (const statusElem of elems.statusList) {
+                statusElem.classList.remove('fade-in');
+            }
         }, duration);
     }
 }
@@ -106,10 +112,10 @@ function updateStatus(text, cssClass, duration) {
 
 document.addEventListener('DOMContentLoaded', () => {
     elems = {
-        add: document.getElementById('add-searcher-item'),
+        add: document.getElementsByClassName('add-searcher-item')[0],
         itemList: document.getElementById('searcher-item-list'),
         form: document.getElementById('searcher-settings-form'),
-        status: document.getElementById('status')
+        statusList: document.getElementsByClassName('save-searcher-status')
     };
 
     elems.form.addEventListener('submit', e => {
