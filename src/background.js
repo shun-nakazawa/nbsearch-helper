@@ -1,3 +1,5 @@
+const uuidRegexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
 function createContextMenus() {
   chrome.storage.sync.get({searchers: []}, ({searchers}) => {
     console.log(searchers);
@@ -24,7 +26,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 
 function isMeme(meme) {
-  return meme && meme.includes('-');
+  return uuidRegexp.test(meme);
 }
 
 function searchMeme(nb, meme) {
