@@ -27,8 +27,13 @@ function isMeme(meme) {
   return meme && meme.includes('-');
 }
 
-function search(nb, meme) {
-  const url = `${nb.url}?search=${meme}`;
+function searchMeme(nb, meme) {
+  const url = `${nb.url}?meme=${meme}`;
+  chrome.tabs.create({url});
+}
+
+function searchText(nb, text) {
+  const url = `${nb.url}?q=${encodeURIComponent(text)}`;
   chrome.tabs.create({url});
 }
 
@@ -39,21 +44,19 @@ chrome.contextMenus.onClicked.addListener((info) => {
     const searcher = searchers.find(searcher => searcher.name === id);
     if (!searcher) return;
 
-    let meme = null;
     if (info.linkUrl) {
       const parts = info.linkUrl.split('/');
-      if (parts.length) {
-        meme = parts.pop();
+      if (parts.length && isMeme(parts[parts.length - 1])) {
+        searchMeme(parts[parts.length - 1]);
+      } else {
+        searchText(info.linkUrl);
       }
     } else if (info.selectionText) {
-      meme = info.selectionText;
-      if (meme.startsWith('#')) {
-        meme = meme.substr(1);
+      if (info.selectionText.startsWith('#')) {
+        searchMeme(info.selectionText.substr(1));
+      } else {
+        searchText(info.selectionText);
       }
-    }
-
-    if (isMeme(meme)) {
-      search(searcher, meme);
     }
   });
 });
