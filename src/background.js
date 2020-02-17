@@ -29,13 +29,13 @@ function isMeme(meme) {
   return uuidRegexp.test(meme);
 }
 
-function searchMeme(nb, meme) {
-  const url = `${nb.url}?meme=${meme}`;
+function searchMeme(searcher, meme) {
+  const url = `${searcher.url}?meme=${meme}`;
   chrome.tabs.create({url});
 }
 
-function searchText(nb, text) {
-  const url = `${nb.url}?q=${encodeURIComponent(text)}`;
+function searchText(searcher, text) {
+  const url = `${searcher.url}?q=${encodeURIComponent(text)}`;
   chrome.tabs.create({url});
 }
 
@@ -49,15 +49,17 @@ chrome.contextMenus.onClicked.addListener((info) => {
     if (info.linkUrl) {
       const parts = info.linkUrl.split('/');
       if (parts.length && isMeme(parts[parts.length - 1])) {
-        searchMeme(parts[parts.length - 1]);
+        searchMeme(searcher, parts[parts.length - 1]);
       } else {
-        searchText(info.linkUrl);
+        searchText(searcher, info.linkUrl);
       }
     } else if (info.selectionText) {
-      if (info.selectionText.startsWith('#')) {
-        searchMeme(info.selectionText.substr(1));
+      if (info.selectionText.startsWith('#') && isMeme(info.selectionText.substr(1))) {
+        searchMeme(searcher, info.selectionText.substr(1));
+      } else if (isMeme(info.selectionText)) {
+        searchMeme(searcher, info.selectionText);
       } else {
-        searchText(info.selectionText);
+        searchText(searcher, info.selectionText);
       }
     }
   });
