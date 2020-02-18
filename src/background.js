@@ -46,20 +46,23 @@ chrome.contextMenus.onClicked.addListener((info) => {
     const searcher = searchers.find(searcher => searcher.name === id);
     if (!searcher) return;
 
-    if (info.linkUrl) {
-      const parts = info.linkUrl.split('/');
+    const linkUrl = info.linkUrl ? info.linkUrl.trim() : '';
+    const selectionText = info.selectionText ? info.selectionText.trim() : '';
+
+    if (linkUrl) {
+      const parts = linkUrl.split('/');
       if (parts.length && isMeme(parts[parts.length - 1])) {
         searchMeme(searcher, parts[parts.length - 1]);
       } else {
-        searchText(searcher, info.linkUrl);
+        searchText(searcher, linkUrl);
       }
-    } else if (info.selectionText) {
-      if (info.selectionText.startsWith('#') && isMeme(info.selectionText.substr(1))) {
-        searchMeme(searcher, info.selectionText.substr(1));
-      } else if (isMeme(info.selectionText)) {
-        searchMeme(searcher, info.selectionText);
+    } else if (selectionText) {
+      if (selectionText.startsWith('#') && isMeme(selectionText.substr(1))) {
+        searchMeme(searcher, selectionText.substr(1));
+      } else if (isMeme(selectionText)) {
+        searchMeme(searcher, selectionText);
       } else {
-        searchText(searcher, info.selectionText);
+        searchText(searcher, selectionText);
       }
     }
   });
