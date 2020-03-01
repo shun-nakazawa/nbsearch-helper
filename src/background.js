@@ -1,6 +1,7 @@
 const uuidRegexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 let selectedNBCellMeme = null;
 
+
 /**
  * Create Context Menu
  */
@@ -83,8 +84,15 @@ chrome.contextMenus.onClicked.addListener((info) => {
 /**
  * Synchronize Selected Jupyter Notebook Cell
  */
+
 chrome.runtime.onMessage.addListener(message => {
   if (message.request === "updateSelectedNBCell") {
     selectedNBCellMeme = message.meme;
   }
+});
+
+chrome.tabs.onActivated.addListener(activeInfo => {
+  chrome.tabs.sendMessage(activeInfo.tabId, {
+    request: 'getSelectedNBCell'
+  });
 });

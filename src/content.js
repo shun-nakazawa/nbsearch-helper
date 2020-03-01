@@ -1,15 +1,18 @@
 const eventName = 'NBSearchHelperUpdatedNBSelectedCell';
+let selectedNBCellMeme = null;
 
-function updateSelectedNBCell(meme) {
+
+function requestUpdateSelectedNBCell() {
   chrome.runtime.sendMessage({
     request: 'updateSelectedNBCell',
-    meme: meme,
+    meme: selectedNBCellMeme,
   });
 }
 
 if (document.body) {
   document.body.addEventListener(eventName, e => {
-    updateSelectedNBCell(e.detail.meme);
+    selectedNBCellMeme = e.detail.meme;
+    requestUpdateSelectedNBCell();
   });
 
   // inject proxy script
@@ -19,3 +22,9 @@ if (document.body) {
   script.setAttribute('src', filePath);
   document.body.appendChild(script);
 }
+
+chrome.runtime.onMessage.addListener(message => {
+  if (message.request === 'getSelectedNBCell') {
+    requestUpdateSelectedNBCell();
+  }
+});

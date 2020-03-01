@@ -1,5 +1,6 @@
 const eventName = 'NBSearchHelperUpdatedNBSelectedCell';
 
+
 function dispatchEvent(cell) {
   const meme = cell && cell.metadata && cell.metadata.lc_cell_meme && cell.metadata.lc_cell_meme.current ?
       cell.metadata.lc_cell_meme.current : null;
