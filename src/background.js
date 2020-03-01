@@ -1,4 +1,9 @@
 const uuidRegexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+let selectedNBCellMeme = null;
+
+/**
+ * Create Context Menu
+ */
 
 function createContextMenus() {
   chrome.storage.sync.get({searchers: []}, ({searchers}) => {
@@ -8,7 +13,7 @@ function createContextMenus() {
       chrome.contextMenus.create({
         id: `${searcher.name}`,
         title: searcher.name,
-        contexts: ['link', 'selection']
+        contexts: ['all']
       });
     }
   });
@@ -24,6 +29,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
+
+/**
+ * Context Menu Event
+ */
 
 function isMeme(meme) {
   return uuidRegexp.test(meme);
@@ -64,6 +73,18 @@ chrome.contextMenus.onClicked.addListener((info) => {
       } else {
         searchText(searcher, selectionText);
       }
+    } else if (selectedNBCellMeme) {
+      searchMeme(searcher, selectedNBCellMeme);
     }
   });
+});
+
+
+/**
+ * Synchronize Selected Jupyter Notebook Cell
+ */
+chrome.runtime.onMessage.addListener(message => {
+  if (message.request === "updateSelectedNBCell") {
+    selectedNBCellMeme = message.meme;
+  }
 });

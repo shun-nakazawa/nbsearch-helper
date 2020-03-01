@@ -19,5 +19,10 @@
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": true
-  }
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"]
+  }],
+  "web_accessible_resources": ["nb_selected_cell_proxy.js"]
 }
