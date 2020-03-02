@@ -1,6 +1,16 @@
 const uuidRegexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 let selectedNBCellMeme = null;
 
+function showNotification(message, contextMessage) {
+  chrome.notifications.create({
+    iconUrl: "./icons/48.png",
+    message,
+    contextMessage,
+    title: "nbsearch-helper",
+    type: "basic",
+  });
+}
+
 
 /**
  * Create Context Menu
@@ -76,6 +86,11 @@ chrome.contextMenus.onClicked.addListener((info) => {
       }
     } else if (selectedNBCellMeme) {
       searchMeme(searcher, selectedNBCellMeme);
+    } else {
+      showNotification(
+          'Cannot search a MEME or text.',
+          'A MEME or text are not selected.'
+      );
     }
   });
 });
