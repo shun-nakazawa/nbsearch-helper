@@ -105,9 +105,3 @@ chrome.runtime.onMessage.addListener(message => {
     selectedNBCellMeme = message.meme;
   }
 });
-
-chrome.tabs.onActivated.addListener(activeInfo => {
-  chrome.tabs.sendMessage(activeInfo.tabId, {
-    request: 'getSelectedNBCell'
-  });
-});

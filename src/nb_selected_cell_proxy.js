@@ -13,9 +13,15 @@ function dispatchEvent(cell) {
 
 if (typeof Jupyter !== 'undefined') {
   Jupyter.notebook.config.loaded.then(() => {
-    Jupyter.notebook.events.on('select.Cell', (e, {cell}) => dispatchEvent(cell));
-
-    const currentSelectedCell = Jupyter.notebook.get_selected_cell();
-    dispatchEvent(currentSelectedCell);
+    document.body.addEventListener('mousedown', e => {
+      if (e.button !== 2) return;
+      const cellElem = $(e.target).closest('.cell');
+      dispatchEvent(cellElem.data('cell'));
+    });
+  });
+} else {
+  document.body.addEventListener('mousedown', e => {
+    if (e.button !== 2) return;
+    dispatchEvent(null);
   });
 }
