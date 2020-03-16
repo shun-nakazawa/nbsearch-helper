@@ -33,6 +33,7 @@ function getLastUrlPath(url) {
 function updateContextMenus() {
   chrome.storage.sync.get({searchers: defaultSearchers}, ({searchers}) => {
     chrome.contextMenus.removeAll();
+
     const {
       byText: byTextSearchers = [],
       byMeme: byMemeSearchers = []
@@ -71,46 +72,26 @@ function updateContextMenus() {
 
     if (selectedTextType === 'Text') {
       for (const searcher of byTextSearchers) {
-        properties.fromText.children.push({
-          by: 'byText',
-          searcher,
-          contexts: ['all']
-        });
+        properties.fromText.children.push({by: 'byText', searcher});
       }
-    }
-
-    for (const searcher of byTextSearchers) {
-      properties.fromLink.children.push({
-        by: `byText`,
-        searcher,
-        contexts: ['link']
-      });
     }
 
     if (selectedTextType === 'MEME') {
       for (const searcher of byMemeSearchers) {
-        properties.fromText.children.push({
-          by: `byMeme`,
-          searcher,
-          contexts: ['all']
-        });
+        properties.fromText.children.push({by: `byMeme`, searcher});
       }
     }
 
-    for (const searcher of byMemeSearchers) {
-      properties.fromLink.children.push({
-        by: `byMeme`,
-        searcher,
-        contexts: ['link']
-      });
+    for (const searcher of byTextSearchers) {
+      properties.fromLink.children.push({by: `byText`, searcher});
     }
 
     for (const searcher of byMemeSearchers) {
-      properties.fromCell.children.push({
-        by: `byMeme`,
-        searcher,
-        contexts: ['all']
-      });
+      properties.fromLink.children.push({by: `byMeme`, searcher});
+    }
+
+    for (const searcher of byMemeSearchers) {
+      properties.fromCell.children.push({by: `byMeme`, searcher});
     }
 
     menuItemIdToSearcher = {};
@@ -118,16 +99,16 @@ function updateContextMenus() {
     for (const [from, {parent, children}] of Object.entries(properties)) {
       if (children.length) {
         chrome.contextMenus.create(parent, () => {
-          for (const {by, searcher, contexts} of children) {
+          for (const {by, searcher} of children) {
             const prefix = by === 'byText' ? '(Text)' : '(MEME)';
             const params = {
               id: `${from}:${by}:${idx++}`,
               title: `${prefix} ${searcher.name}`,
-              contexts: contexts,
+              contexts: parent.contexts,
               parentId: parent.id,
             };
             const childId = chrome.contextMenus.create(params);
-            menuItemIdToSearcher[childId] = searcher;
+            menuItemIdToSearcher[childId] = {from, by, searcher};
           }
         });
       }
@@ -155,8 +136,7 @@ function search(searcher, query) {
 }
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  const [from, by] = info.menuItemId.split(':').slice(0, 2);
-  const searcher = menuItemIdToSearcher[info.menuItemId];
+  const {from, by, searcher} = menuItemIdToSearcher[info.menuItemId];
 
   if (from === 'fromLink') {
     let query = info.linkUrl ? info.linkUrl.trim() : '';
@@ -164,7 +144,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
       query = getLastUrlPath(query);
     }
     if (query) {
-      search(searcher, info);
+      search(searcher, query);
     } else {
       showNotification('Please right click on non-empty link.');
     }
