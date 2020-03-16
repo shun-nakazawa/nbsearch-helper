@@ -1,47 +1,80 @@
-let elems;
-let statusTimerId;
 let dirty = false;
 
-function saveSearchers() {
-    const items = Array.from(document.getElementsByClassName('searcher-item'));
-    const searchers = items.map(item => {
-        const name = item.querySelector('input[name=name]').value;
-        const url = item.querySelector('input[name=url]').value;
-        return {name, url}
-    });
-    chrome.storage.sync.set({ searchers }, (err) =>  {
+
+class Store {
+  save(searcherListAll) {
+    const data = {};
+    for (const searcherList of searcherListAll) {
+      data[searcherList.key] = searcherList.getValues();
+    }
+
+    return new Promise((resolve, reject) => {
+      chrome.storage.sync.set({searchers: data}, (err) => {
         if (err) {
-            console.error(err);
-            updateStatus('Error: ' + err, 'error', 0);
+          reject(err);
         } else {
-            dirty = false;
-            updateStatus('Saved!', 'saved', 3000);
+          resolve({searchers: data});
         }
+      });
     });
-}
+  }
 
-function restoreSearcher() {
-    chrome.storage.sync.get({searchers: []}, ({searchers}) => {
-        for (const searcher of searchers) {
-            addSearcherItem(searcher);
-        }
-
-        if (searchers.length === 0) {
-            addSearcherItem();
-        }
+  load() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.sync.get({searchers: defaultSearchers}, ({searchers}) => {
+        resolve(searchers);
+      });
     });
+  }
 }
 
-function addSearcherItem(searcher) {
-    const searcherItemElem = createSearcherItemElem(searcher);
-    elems.itemList.insertBefore(searcherItemElem, elems.add);
+
+class SearcherList {
+  constructor(key, selector, addSelector) {
+    this.key = key;
+    this.elem = document.querySelector(selector);
+    this.elems = {
+      add: this.elem.querySelector(addSelector)
+    };
+    this.searchers = [];
+    this.elems.add.addEventListener('click', e => {
+      this.addItem();
+    });
+  }
+
+  addItem() {
+    const searcher = new Searcher();
+    this.elem.insertBefore(searcher.elem, this.elems.add);
+    this.searchers.push(searcher);
+    searcher.on('remove-searcher', e => {
+      this.removeItem(e.detail.searcher);
+    });
+    this.dispatch('add-searcher', {searcher});
+    return searcher;
+  }
+
+  removeItem(searcher) {
+    this.elem.removeChild(searcher.elem);
+    this.searchers.splice(this.searchers.indexOf(searcher), 1);
+    this.dispatch('remove-searcher', {searcher});
+  }
+
+  on(eventName, callback) {
+    this.elem.addEventListener(eventName, callback);
+  }
+
+  dispatch(eventName, detail = {}) {
+    this.elem.dispatchEvent(new CustomEvent(eventName, {detail}));
+  }
+
+  getValues() {
+    return this.searchers.map(searcher => searcher.getValue());
+  }
 }
 
-function removeSearcherItem(searcherItemElem) {
-    elems.itemList.removeChild(searcherItemElem);
-}
 
-function createSearcherItemElem(searcher) {
+class Searcher {
+  constructor() {
     const inputName = document.createElement('input');
     inputName.setAttribute('name', 'name');
     inputName.setAttribute('type', 'text');
@@ -68,11 +101,6 @@ function createSearcherItemElem(searcher) {
     inputUrlField.appendChild(inputUrlLabel);
     inputUrlField.appendChild(inputUrl);
 
-    if (searcher) {
-        inputName.value = searcher.name;
-        inputUrl.value = searcher.url;
-    }
-
     const removeButton = document.createElement('a');
     removeButton.setAttribute('type', 'button');
     removeButton.setAttribute('href', '#');
@@ -85,69 +113,139 @@ function createSearcherItemElem(searcher) {
     container.appendChild(inputUrlField);
     container.appendChild(removeButton);
 
-    return container;
-}
-
-function updateStatus(text, cssClass, duration) {
-    if (statusTimerId) {
-        clearTimeout(statusTimerId);
-    }
-    for (const statusElem of elems.statusList) {
-        statusElem.textContent = text;
-        for (const cls of Array.from(statusElem.classList)) {
-            if (cls !== 'save-searcher-status') {
-                statusElem.classList.remove(cls);
-            }
-        }
-        statusElem.classList.add(cssClass);
-        statusElem.classList.add('fade-in');
-    }
-    if (duration > 0) {
-        statusTimerId = setTimeout(() => {
-            for (const statusElem of elems.statusList) {
-                statusElem.classList.remove('fade-in');
-            }
-        }, duration);
-    }
-}
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    elems = {
-        add: document.getElementsByClassName('add-searcher-item')[0],
-        itemList: document.getElementById('searcher-item-list'),
-        form: document.getElementById('searcher-settings-form'),
-        statusList: document.getElementsByClassName('save-searcher-status')
+    this.elem = container;
+    this.elems = {
+      inputName,
+      inputUrl,
+      removeButton
     };
 
-    elems.form.addEventListener('submit', e => {
-        saveSearchers();
-        e.preventDefault();
+    removeButton.addEventListener('click', e => {
+      if (e.target && e.target.classList.contains('remove-searcher-item')) {
+        this.dispatch('remove-searcher', {searcher: this});
+      }
     });
+  }
 
-    elems.add.addEventListener('click', e => {
-        dirty = true;
-        addSearcherItem();
-    });
+  on(eventName, callback) {
+    this.elem.addEventListener(eventName, callback);
+  }
 
-    elems.itemList.addEventListener('click', e => {
-        if (e.target && e.target.classList.contains('remove-searcher-item')) {
-            dirty = true;
-            removeSearcherItem(e.target.parentElement);
-            e.preventDefault();
+  dispatch(eventName, detail = {}) {
+    this.elem.dispatchEvent(new CustomEvent(eventName, {detail}));
+  }
+
+  setValue({name, url}) {
+    if (name) {
+      this.elems.inputName.value = name;
+    }
+    if (url) {
+      this.elems.inputUrl.value = url;
+    }
+  }
+
+  getValue() {
+    return {
+      name: this.elems.inputName.value,
+      url: this.elems.inputUrl.value
+    };
+  }
+}
+
+
+class StatusViewer {
+  constructor(selector) {
+    this.timerId = null;
+    this.selector = selector;
+    this.elems = Array.from(document.querySelectorAll(selector));
+  }
+
+  show(text, cssClass, duration = 0) {
+    this.clear();
+
+    for (const elem of this.elems) {
+      elem.textContent = text;
+      elem.classList.add(cssClass);
+      elem.classList.add('fade-in');
+    }
+
+    if (duration > 0) {
+      this.timerId = setTimeout(() => {
+        for (const elem of this.elems) {
+          elem.classList.remove('fade-in');
         }
-    });
+      }, duration);
+    }
+  }
 
-    elems.itemList.addEventListener('input', e => {
-        dirty = true;
-    });
+  clear() {
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+    }
 
-    window.addEventListener('beforeunload', e => {
-        if (dirty) {
-            e.preventDefault();
-            e.returnValue = '';
+    for (const elem of this.elems) {
+      elem.textContent = '';
+      for (const cls of Array.from(elem.classList)) {
+        if (cls !== this.selector.slice(1)) {
+          elem.classList.remove(cls);
         }
-    });
+      }
+    }
+  }
+}
 
-    restoreSearcher();
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const statusViewer = new StatusViewer('.save-searcher-status');
+  const store = new Store();
+
+  const searcherListAll = [
+    new SearcherList('byText', '#searcher-item-list-by-text', '.add-searcher-item'),
+    new SearcherList('byMeme', '#searcher-item-list-by-meme', '.add-searcher-item')
+  ];
+
+  const initialValues = await store.load();
+  for (const searcherList of searcherListAll) {
+    const values = initialValues[searcherList.key];
+    if (values && values.length) {
+      for (const value of values) {
+        const searcher = searcherList.addItem();
+        searcher.setValue(value);
+      }
+    }
+  }
+
+  const formElem = document.getElementById('searcher-settings-form');
+
+  formElem.addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await store.save(searcherListAll);
+      dirty = false;
+      statusViewer.show('Saved!', 'saved', 3000);
+    } catch (err) {
+      console.error(err);
+      statusViewer.show('Error: ' + err, 'error', 0);
+    }
+  });
+
+  for (const searcherList of searcherListAll) {
+    searcherList.on('add-searcher', e => {
+      dirty = true;
+    });
+    searcherList.on('remove-searcher', e => {
+      dirty = true;
+    });
+  }
+
+  formElem.addEventListener('input', e => {
+    dirty = true;
+  });
+
+  window.addEventListener('beforeunload', e => {
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 });

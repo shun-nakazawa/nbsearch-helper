@@ -15,15 +15,24 @@
   "permissions": [
     "contextMenus",
     "notifications",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": true
   },
-  "content_scripts": [{
-    "matches": ["<all_urls>"],
-    "js": ["content.js"]
-  }],
-  "web_accessible_resources": ["nb_selected_cell_proxy.js"]
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*.ipynb*",
+        "https://*/*.ipynb*"
+      ],
+      "js": ["nb_content.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
 }

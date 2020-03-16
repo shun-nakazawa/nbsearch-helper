@@ -1,22 +1,48 @@
-const eventName = 'NBSearchHelperUpdatedNBSelectedCell';
+let beforeSelectedText = '';
 
+function throttle(delay, callback) {
+  let timeoutId;
+  let lastExec = 0;
 
-function requestUpdateSelectedNBCell(meme) {
-  chrome.runtime.sendMessage({
-    request: 'updateSelectedNBCell',
-    meme,
-  });
+  return (...args) => {
+    const elapsed = Date.now() - lastExec;
+    const exec = () => {
+      lastExec = Date.now();
+      callback(...args);
+    };
+
+    clearTimeout(timeoutId);
+
+    if (elapsed > delay) {
+      exec();
+    } else {
+      timeoutId = setTimeout(exec, delay - elapsed);
+    }
+  };
 }
 
-if (document.body) {
-  document.body.addEventListener(eventName, e => {
-    requestUpdateSelectedNBCell(e.detail.meme);
-  });
+function onSelectionChange() {
+  const selection = window.getSelection();
+  const text = selection !== null ? selection.toString().trim() : '';
 
-  // inject proxy script
-  const filePath = chrome.extension.getURL('nb_selected_cell_proxy.js');
-  const script = document.createElement('script');
-  script.setAttribute('type', 'text/javascript');
-  script.setAttribute('src', filePath);
-  document.body.appendChild(script);
+  if (beforeSelectedText !== text) {
+    beforeSelectedText = text;
+    chrome.runtime.sendMessage({
+      request: 'updateSelectedText',
+      text: text,
+    });
+  }
 }
+
+chrome.runtime.onMessage.addListener(message => {
+  if (message.request === "restoreSelectedText") {
+    console.log('receive restoreSelectedText', beforeSelectedText);
+    chrome.runtime.sendMessage({
+      request: 'updateSelectedText',
+      text: beforeSelectedText,
+    });
+  }
+});
+
+document.addEventListener("selectionchange", throttle(100, onSelectionChange));
+onSelectionChange();
