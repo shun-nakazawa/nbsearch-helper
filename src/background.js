@@ -31,7 +31,7 @@ function getLastUrlPath(url) {
  */
 
 function updateContextMenus() {
-  chrome.storage.sync.get({searchers: defaultSearchers}, ({searchers}) => {
+  chrome.storage.sync.get({searchers: {}}, ({searchers}) => {
     chrome.contextMenus.removeAll();
 
     const {

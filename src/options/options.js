@@ -21,7 +21,7 @@ class Store {
 
   load() {
     return new Promise((resolve, reject) => {
-      chrome.storage.sync.get({searchers: defaultSearchers}, ({searchers}) => {
+      chrome.storage.sync.get({searchers: {}}, ({searchers}) => {
         resolve(searchers);
       });
     });
