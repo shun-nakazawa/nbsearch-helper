@@ -39,79 +39,88 @@ function updateContextMenus() {
       byMeme: byMemeSearchers = []
     } = searchers;
 
-    const properties = {
-      fromText: {
-        parent: {
-          id: 'fromText',
-          title: 'Search from text',
-          contexts: ['all']
-        },
-        children: []
-      },
-      fromLink: {
-        parent: {
-          id: 'fromLink',
-          title: 'Search from link',
-          contexts: ['link']
-        },
-        children: []
-      },
-      fromCell: {
-        parent: {
-          id: 'fromCell',
-          title: 'Search from cell',
-          contexts: ['all'],
-          documentUrlPatterns: [
-            "http://*/*.ipynb*",
-            "https://*/*.ipynb*"
-          ]
-        },
-        children: []
-      }
-    };
+    const itemsParams = [];
 
-    if (selectedTextType === 'Text') {
+    if (selectedTextType === 'Text' || selectedTextType === 'MEME') {
       for (const searcher of byTextSearchers) {
-        properties.fromText.children.push({by: 'byText', searcher});
+        itemsParams.push({
+          from: 'fromText',
+          by: 'byText',
+          prefix: 'as Text',
+          contexts: ['all'],
+          searcher
+        });
       }
     }
 
     if (selectedTextType === 'MEME') {
       for (const searcher of byMemeSearchers) {
-        properties.fromText.children.push({by: `byMeme`, searcher});
+        itemsParams.push({
+          from: 'fromText',
+          by: `byMeme`,
+          prefix: 'as MEME',
+          contexts: ['all'],
+          searcher
+        });
       }
     }
 
     for (const searcher of byTextSearchers) {
-      properties.fromLink.children.push({by: `byText`, searcher});
+      itemsParams.push({
+        from: 'fromLink',
+        by: `byText`,
+        prefix: 'URL',
+        contexts: ['link'],
+        searcher
+      });
     }
 
     for (const searcher of byMemeSearchers) {
-      properties.fromLink.children.push({by: `byMeme`, searcher});
+      itemsParams.push({
+        from: 'fromLink',
+        by: `byMeme`,
+        prefix: 'MEME',
+        contexts: ['link'],
+        searcher
+      });
     }
 
     for (const searcher of byMemeSearchers) {
-      properties.fromCell.children.push({by: `byMeme`, searcher});
+      itemsParams.push({
+        from: 'fromCell',
+        by: `byMeme`,
+        prefix: 'Cell MEME',
+        contexts: ['all'],
+        documentUrlPatterns: [
+          "http://*/*.ipynb*",
+          "https://*/*.ipynb*"
+        ],
+        searcher
+      });
     }
 
     menuItemIdToSearcher = {};
-    let idx = 0;
-    for (const [from, {parent, children}] of Object.entries(properties)) {
-      if (children.length) {
-        chrome.contextMenus.create(parent, () => {
-          for (const {by, searcher} of children) {
-            const prefix = by === 'byText' ? '(Text)' : '(MEME)';
-            const params = {
-              id: `${from}:${by}:${idx++}`,
-              title: `${prefix} ${searcher.name}`,
-              contexts: parent.contexts,
-              parentId: parent.id,
-            };
-            const childId = chrome.contextMenus.create(params);
-            menuItemIdToSearcher[childId] = {from, by, searcher};
-          }
-        });
-      }
+
+    if (itemsParams.length) {
+      const parentId = 'parent';
+      chrome.contextMenus.create({
+        id: parentId,
+        title: 'nbsearch-helper',
+        contexts: ['all'],
+      }, () => {
+        let idx = 0;
+        for (const {from, by, prefix, contexts, documentUrlPatterns, searcher} of itemsParams) {
+          const params = {
+            id: `${from}:${by}:${idx++}`,
+            title: `(${prefix}) ${searcher.name}`,
+            contexts,
+            documentUrlPatterns,
+            parentId,
+          };
+          const childId = chrome.contextMenus.create(params);
+          menuItemIdToSearcher[childId] = {from, by, searcher};
+        }
+      });
     }
   });
 }
@@ -136,6 +145,14 @@ function search(searcher, query) {
 }
 
 chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === 'parent') {
+    showNotification('Please right click on selected text, link or Cell.');
+    return;
+  }
+  if (!menuItemIdToSearcher[info.menuItemId]) {
+    showNotification('Please try again after reloading this page.');
+    return;
+  }
   const {from, by, searcher} = menuItemIdToSearcher[info.menuItemId];
 
   if (from === 'fromLink') {
