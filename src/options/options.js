@@ -70,6 +70,12 @@ class SearcherList {
   getValues() {
     return this.searchers.map(searcher => searcher.getValue());
   }
+
+  validateAll() {
+    for (const searcher of this.searchers) {
+      searcher.validate();
+    }
+  }
 }
 
 
@@ -150,6 +156,15 @@ class Searcher {
       url: this.elems.inputUrl.value
     };
   }
+
+  validate() {
+    const name = this.elems.inputName.value;
+    const url = this.elems.inputUrl.value;
+    if (!name) throw new Error('Need Name');
+    if (!url) throw new Error('Need Url');
+    if (!url.includes('?')) throw new Error(`URL must contain URL query (value is "${url}", example is "http://nb1.com?nbsearch&meme=")`);
+    return name && url && url.includes('?');
+  }
 }
 
 
@@ -220,6 +235,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   formElem.addEventListener('submit', async e => {
     e.preventDefault();
     try {
+      for (const searcherList of searcherListAll) {
+        searcherList.validateAll();
+      }
       await store.save(searcherListAll);
       dirty = false;
       statusViewer.show('Saved!', 'saved', 3000);
