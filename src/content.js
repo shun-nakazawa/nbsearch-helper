@@ -36,7 +36,6 @@ function onSelectionChange() {
 
 chrome.runtime.onMessage.addListener(message => {
   if (message.request === "restoreSelectedText") {
-    console.log('receive restoreSelectedText', beforeSelectedText);
     chrome.runtime.sendMessage({
       request: 'updateSelectedText',
       text: beforeSelectedText,
