@@ -141,7 +141,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
  */
 
 function search(searcher, query) {
-  chrome.tabs.create({url: searcher.url + query});
+  chrome.tabs.create({url: searcher.url + encodeURIComponent(query)});
 }
 
 chrome.contextMenus.onClicked.addListener((info) => {
