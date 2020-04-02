@@ -1,0 +1,38 @@
+{
+  "manifest_version": 2,
+  "name": "nbsearch-helper",
+  "description": "Jupyter notebook search helper.",
+  "version": "0.0.1",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+    "contextMenus",
+    "notifications",
+    "storage",
+    "tabs"
+  ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*.ipynb*",
+        "https://*/*.ipynb*"
+      ],
+      "js": ["nb_content.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

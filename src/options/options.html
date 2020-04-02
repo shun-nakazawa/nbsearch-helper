@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>nbsearch-helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <section class="container">
+    <h1>nbsearch-helper</h1>
+    <form id="searcher-settings-form">
+      <h2>Searcher settings</h2>
+      <div class="save-search-item-block">
+        <output class="save-searcher-status"></output>
+        <button class="save-searcher-item" type="submit">Save</button>
+      </div>
+      <h3>テキスト検索</h3>
+      <div id="searcher-item-list-by-text">
+        <button class="add-searcher-item" type="button">+</button>
+      </div>
+      <h3>MEME検索</h3>
+      <div id="searcher-item-list-by-meme">
+        <button class="add-searcher-item" type="button">+</button>
+      </div>
+      <div class="save-search-item-block">
+        <output class="save-searcher-status"></output>
+        <button class="save-searcher-item" type="submit">Save</button>
+      </div>
+    </form>
+  </section>
+  <script src="options.js"></script>
+</body>
+
+</html>
